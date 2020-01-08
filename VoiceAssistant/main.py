@@ -7,6 +7,7 @@ import os
 import datetime
 import time
 import pytz
+import subprocess
 import playsound
 import pyttsx3
 from googleapiclient.discovery import build
@@ -151,11 +152,23 @@ def get_events(day, service):
 
         speak(event["summary"] + " at " + start_time)
 
+def note(text):
+    date = datetime.datetime.now()
+    file_name = str(date).replace(":", "-") + "-note.txt"
+    with open(file_name, "w") as f:
+        f.write(text)
+
+    # sublime = "R:\Programy\Sublime Text 3\sublime_text.exe"
+    # subprocess.Popen([sublime, file_name])
+
+    subprocess.Popen(["notepad.exe", file_name])
+
+
 SERVICE = authenticate_google()
 print("Start")
 text = get_audio()
 
-CALENDAR_STRS = ["what do i have", "do i have plans", "am i busy", "do I have anything", "what on"]
+CALENDAR_STRS = ["what do i have", "do i have plans", "am i busy", "do I have anything", "what's on"]
 for phrase in CALENDAR_STRS:
     if phrase in text.lower():
         date = get_date(text)
@@ -163,3 +176,11 @@ for phrase in CALENDAR_STRS:
             get_events(date, SERVICE)
         else:
             speak("Please try again")
+
+NOTE_STRS = ["make a note", "write this down", "remember this", "type this"]
+for phrase in NOTE_STRS:
+    if phrase in text:
+        speak("What would you like me to write down?")
+        write_down = get_audio()
+        note(write_down)
+        speak("I've made a note of that")
