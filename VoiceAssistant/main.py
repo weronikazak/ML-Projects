@@ -20,6 +20,7 @@ MONTHS = ["january", "february", "march", "april", "may", "june", "july", "augus
 DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 DAY_EXTENTION = ['rd', 'th', 'st', 'nd']
 
+
 def get_date(text):
     text = text.lower()
     today = datetime.date.today()
@@ -164,23 +165,30 @@ def note(text):
     subprocess.Popen(["notepad.exe", file_name])
 
 
+WAKE = "hi tim"
 SERVICE = authenticate_google()
 print("Start")
-text = get_audio()
+while True:
+    print("Listening")
+    text = get_audio()
 
-CALENDAR_STRS = ["what do i have", "do i have plans", "am i busy", "do I have anything", "what's on"]
-for phrase in CALENDAR_STRS:
-    if phrase in text.lower():
-        date = get_date(text)
-        if date:
-            get_events(date, SERVICE)
-        else:
-            speak("Please try again")
+    if text.count(WAKE) > 0:
+        speak("I am ready")
+        text = get_audio()
 
-NOTE_STRS = ["make a note", "write this down", "remember this", "type this"]
-for phrase in NOTE_STRS:
-    if phrase in text:
-        speak("What would you like me to write down?")
-        write_down = get_audio()
-        note(write_down)
-        speak("I've made a note of that")
+        CALENDAR_STRS = ["what do i have", "do i have plans", "am i busy", "do I have anything", "what's on"]
+        for phrase in CALENDAR_STRS:
+            if phrase in text.lower():
+                date = get_date(text)
+                if date:
+                    get_events(date, SERVICE)
+                else:
+                    speak("I don't understand")
+
+        NOTE_STRS = ["make a note", "write this down", "remember this", "type this"]
+        for phrase in NOTE_STRS:
+            if phrase in text:
+                speak("What would you like me to write down?")
+                note_text = get_audio()
+                note(note_text)
+                speak("I've made a note of that")
