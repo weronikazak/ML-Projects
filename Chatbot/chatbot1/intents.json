@@ -1,0 +1,44 @@
+{"intents":[
+    {
+        "tag": "greeting",
+        "patterns": ["Hi", "Hello", "Good day", "wassup"],
+        "responses" : ["Hello!", "Good to see you again", "Ello"],
+        "context_set":""
+    },
+    {
+        "tag": "goodbye",
+        "patterns": ["cya", "bye", "goodbye"],
+        "responses" : ["Bye bye!", ":(", "Aw"],
+        "context_set":""
+    },
+    {
+        "tag": "age",
+        "patterns": ["how old", "what is your age", "how old are you", "age"],
+        "responses" : ["18 years young", "I'm 18"],
+        "context_set":""
+    },
+    {
+        "tag": "name",
+        "patterns": ["whats your name", "how do i call you", "you"],
+        "responses" : ["Not gonna tell", "They call me Tim", "Im Tim"],
+        "context_set":""
+    },
+    {
+        "tag": "shop",
+        "patterns": ["buy", "id like to buy something", "recommend", "whats on the menu"],
+        "responses" : ["There are a lot of delicious cookies", "Let's see. Cookies, cookies and cookies"],
+        "context_set":""
+    },
+    {
+        "tag": "hours",
+        "patterns": ["When are you open", "open days", "hours", "working hours"],
+        "responses" : ["We are open 7AM-4PM everyday"],
+        "context_set":""
+    },
+    {
+        "tag": "buy",
+        "patterns": ["how much for a cookie", "cookie", "id like to get a cookie"],
+        "responses" : ["It's a 4$ for each", "Heres a cookie"],
+        "context_set":""
+    }
+]}
