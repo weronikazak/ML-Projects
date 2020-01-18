@@ -13,7 +13,7 @@ face_cascade        = cv2.CascadeClassifier('cascades/data/haarcascade_frontalfa
 eyes_cascade        = cv2.CascadeClassifier('cascades/data/haarcascade_eye.xml')
 nose_cascade        = cv2.CascadeClassifier('cascades/data/haarcascade_mcs_nose.xml')
 glasses             = cv2.imread("images/fun/heart.png", -1)
-mustache            = cv2.imread('images/fun/heart.png',-1)
+mustache            = cv2.imread('images/fun/mustache.png',-1)
 
 '''
 OpenCV & Python Tutorial Video Series: https://kirr.co/ijcr59
