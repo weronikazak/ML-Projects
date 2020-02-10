@@ -27,4 +27,6 @@
 27. Harris Corner Detection
 28. Good Features To Track / Shi-Thomas Corner Detector
 29. SIFT
-30.
+30. SURF
+31. FAST 
+32. BRIEF
