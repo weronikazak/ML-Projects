@@ -31,5 +31,8 @@
 31. FAST 
 32. BRIEF
 33. ORB
-34.Feature Matching
+34. Feature Matching
 35. Feature Matchin+ Homography
+36. Meanshift / Camshift
+37. Optical Flow
+38. Background Substraction
