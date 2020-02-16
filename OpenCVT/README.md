@@ -36,3 +36,5 @@
 36. Meanshift / Camshift
 37. Optical Flow
 38. Background Substraction
+39. Image Impainting
+40. Hand-written
