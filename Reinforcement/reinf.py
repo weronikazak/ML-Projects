@@ -1,13 +1,19 @@
 import gym
 import numpy as np
+import matplotlib.pyplot as plt
 
 env = gym.make('MountainCar-v0')
+
+ep_rewards = []
+aggr_ep_rewards = {'ep':[], 'avg':[], 'max':[], 'min':[]}
 
 done = False
 LEARNING_RATE = 0.1
 DISCOUNT = 0.95
-EPISODES = 25000
+EPISODES = 8000
 SHOW_EVERY = 2000
+
+STATS_EVERY = 100
 
 epsilon = 0.5
 START_EPSILON_DECAYING = 1
@@ -31,6 +37,7 @@ def get_discrete_state(state):
 
 
 for episode in range(EPISODES):
+    episode_reward = 0
     if episode % SHOW_EVERY == 0:
         print(episode)
         render = True
@@ -45,6 +52,9 @@ for episode in range(EPISODES):
         else:
             action = np.random.randint(0, env.action_space.n)
         new_state, reward, done, _ = env.step(action)
+
+        episode_reward += reward
+
         new_discrete_state = get_discrete_state(new_state)
 
         # print(reward, new_state)
@@ -65,5 +75,20 @@ for episode in range(EPISODES):
         if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:
             epsilon -= epsilon_decay_value
 
+        ep_rewards.append(episode_reward)
+        if not episode % STATS_EVERY:
+            avg_reward = sum(ep_rewards[-SHOW_EVERY:])/SHOW_EVERY
+            aggr_ep_rewards['ep'].append(episode)
+            aggr_ep_rewards['avg'].append(avg_reward)
+            aggr_ep_rewards['max'].append(max(ep_rewards[-SHOW_EVERY:]))
+            aggr_ep_rewards['min'].append(min(ep_rewards[-SHOW_EVERY:]))
+
+
 
 env.close()
+
+plt.plot(aggr_ep_rewards['ep'], aggr_ep_rewards['avg'], label='avergae')
+plt.plot(aggr_ep_rewards['ep'], aggr_ep_rewards['max'], label='max')
+plt.plot(aggr_ep_rewards['ep'], aggr_ep_rewards['min'], label='min')
+plt.legend(loc=4)
+plt.show()
