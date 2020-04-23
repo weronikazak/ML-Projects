@@ -33,16 +33,16 @@ style.use('ggplot')
 
 
 
-SIZE = 10
+SIZE = 20
 
-EPISODES = 25000
+EPISODES = 50000
 
 MOVE_PENALTY = 1
 ENEMY_PENALTY = 300
 FOOD_REWARD = 25
-epsilon = 0.5
-EPS_DECAY = 0.9999
-SHOW_EVERY = 1000
+epsilon = 1.0
+EPS_DECAY = 0.9998
+SHOW_EVERY = 5000
 
 start_q_table = None
 
@@ -134,12 +134,12 @@ class Squares:
             self.y = SIZE-1
 
 
+"""
 
 player = Squares()
 food = Squares()
 enemy = Squares()
 
-"""
 print(player)
 print(food)
 print(player - food)
@@ -187,7 +187,18 @@ else:
 
 
 
-print(q_table[((-9, 2), (3, 9))])
+# print(q_table[((-9, 2), (3, 9))])
+
+
+
+
+
+
+
+# ----------------------------
+# RUN EPISODES
+# ----------------------------
+
 
 
 
@@ -199,7 +210,7 @@ for episode in range(EPISODES):
 
     if episode % SHOW_EVERY == 0:
         print(f'on episode {episode}, epsilon is {epsilon}')
-        print(f'{SHOW_EVERY} ep. mean: {np.mean(episode_rewards[-SHOW_EVERY])}')
+        print(f'{SHOW_EVERY} ep. mean: {np.mean(episode_rewards[-SHOW_EVERY:])}')
         show = True
     else:
         show = False
@@ -212,18 +223,21 @@ for episode in range(EPISODES):
         if np.random.random() > epsilon:
             action = np.argmax(q_table[obs])
         else:
-            action = np.arnadom.randint(0, 4)
+            action = np.random.randint(0, 4)
         
         player.action(action)
-        # enemy.move()
-        # food.move()
+
+        enemy.move()
+        food.move()
+
 
         # --------------
         # REWARDS
         # --------------
 
+
         if player.x == enemy.x and player.y == enemy.y:
-            reward = -ENEMY_PENALTY
+            reward = (-ENEMY_PENALTY)
         elif player.x == food.x and player.y == food.y:
             reward = FOOD_REWARD
         else:
@@ -242,11 +256,44 @@ for episode in range(EPISODES):
         q_table[obs][action] = new_q
 
         if show:
-            # shows a rgb of our size
+            time.sleep(0.01)
+            # black background
             env = np.zeros((SIZE, SIZE, 3), dtype=np.uint8) 
 
-            # sets the food location tile to green colour
+            # green food
             env[food.x][food.y] = d[FOOD_N]
 
-            
+            # blue player
+            env[player.x][player.y] = d[PLAYER_N]
 
+            # red enemy
+            env[enemy.x][enemy.y] = d[ENEMY_N]
+
+            img = Image.fromarray(env, 'RGB')
+            img = img.resize((400, 400))
+            cv2.imshow('game', np.array(img))
+
+            if reward == FOOD_REWARD or reward == (-ENEMY_PENALTY):
+                if cv2.waitKey(200) & 0xFF == ord('q'):
+                    break
+            else:
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+        episode_reward += reward
+        if reward == FOOD_REWARD or reward == (-ENEMY_PENALTY):
+            break
+        
+    # print(episode_reward)
+    episode_rewards.append(episode_reward)
+    epsilon *= EPS_DECAY
+    
+moving_avg = np.convolve(episode_rewards, np.ones((SHOW_EVERY,))/SHOW_EVERY, mode='valid')
+
+plt.plot([i for i in range(len(moving_avg))], moving_avg)
+plt.ylabel(f'Reward {SHOW_EVERY}ma')
+plt.xlabel('episode #')
+plt.show()
+
+with open(f'q_table-{int(time.time())}.pickle', 'wb') as f:
+    pickle.dump(q_table, f)
