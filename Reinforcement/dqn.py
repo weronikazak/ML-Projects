@@ -5,11 +5,15 @@ import matplotlib.pyplot as plt
 import pickle
 from matplotlib import style
 import time
-import tensorflow
+import tensorflow as tf
 from tensorflow import keras
 from keras import layers as ly
 from collections import deque
+from tqdm import tqdm
 import random
+import os
+
+
 
 style.use('ggplot')
 
@@ -21,16 +25,29 @@ style.use('ggplot')
 
 
 
-
+SHOW_PREVIEW = False
 
 LEARNING_RATE = 0.1
 DISCOUNT = 0.95
+
 epsilon = 1.0
-EPS_DECAY = 0.9998
+EPS_DECAY = 0.99975
+MIN_EPSILON = 0.001
+
 SHOW_EVERY = 5000
+EPISODES = 20_000
+
+MEMORY_FRACTION = 0.2
+REPLAY_MEMORY_SIZE = 50_000 # how many last steps to keep for model training
+MIN_REPLAY_MEMORY_SIZE = 1_000 # minimum number of steps in a memory to start training
+MINIBATCH_SIZE = 64  # how many steps to use for training
+UPDATE_TARGET_EVERY = 5
+
+MODEL_NAME = '2x256'
+MIN_REWARD = -200
 
 
-
+AGGREGATE_STATS_EVERY = 50
 
 
 
@@ -116,26 +133,22 @@ class Squares:
 
 
 
-class BlobEnv:
+class SquaresEnv:
     SIZE = 10
     RETURN_IMAGES = True
-
     MOVE_PENALTY = 1
     ENEMY_PENALTY = 300
     FOOD_REWARD = 25
-    ACTION_SPACE_SIZE = 9
     OBSERVATION_SPACE_VALUES = (SIZE, SIZE, 3)
+    ACTION_SPACE_SIZE = 9
+    PLAYER_N = 1
+    FOOD_N = 2
+    ENEMY_N = 3
 
-    PLAYER_N = 1 # player key in dict
-    FOOD_N = 2 # food key in dict
-    ENEMY_N = 3 # enemy key in dict
+    d = {1: (255, 175, 0),
+         2: (0, 255, 0),
+         3: (0, 0, 255)}
 
-    # the dict of colours
-    d = {
-        1: (255, 175, 0), # blue
-        2: (0, 255, 0), # green
-        3: (0, 0, 255) # red
-    }
 
     def reset(self):
         self.player = Squares(self.SIZE)
@@ -206,19 +219,60 @@ class BlobEnv:
 
 
 
+# --------------------------
+# TENSORBOARD CLASS
+# --------------------------
+
+
+# Own Tensorboard class
+class ModifiedTensorBoard(TensorBoard):
+
+    # Overriding init to set initial step and writer (we want one log file for all .fit() calls)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.step = 1
+        self.writer = tf.summary.FileWriter(self.log_dir)
+
+    # Overriding this method to stop creating default log writer
+    def set_model(self, model):
+        pass
+
+    # Overrided, saves logs with our step number
+    # (otherwise every .fit() will start writing from 0th step)
+    def on_epoch_end(self, epoch, logs=None):
+        self.update_stats(**logs)
+
+    # Overrided
+    # We train for one batch only, no need to save anything at epoch end
+    def on_batch_end(self, batch, logs=None):
+        pass
+
+    # Overrided, so won't close writer
+    def on_train_end(self, _):
+        pass
+
+    # Custom method for saving own metrics
+    # Creates writer, writes custom metrics and closes writer
+    def update_stats(self, **stats):
+        self._write_logs(stats, self.step)
+
+
+
+
+
+
+
+
+
+
+
+
 # ------------------------------
 # MAKING DQN
 # ------------------------------
 
 
 
-
-
-
-REPLAY_MEMORY_SIZE = 50_000 # how many last steps to keep for model training
-MIN_REPLAY_MEMORY_SIZE = 1_000 # minimum number of steps in a memory to start training
-MINIBATCH_SIZE = 64  # how many steps to use for training
-UPDATE_TARGET_EVERY = 5
 
 
 
@@ -233,7 +287,7 @@ class DQNAgent:
 
         self.replay_memory = deque(maxlen=REPLAY_MEMORY_SIZE)
 
-        # self.tensorboard = ModifiedTensorBoard(logdir=f'logs/{MODEL_NAME}-{int(time.time())}')
+        self.tensorboard = ModifiedTensorBoard(logdir=f'logs/{MODEL_NAME}-{int(time.time())}')
 
         self.target_update_counter = 0
 
@@ -274,19 +328,43 @@ class DQNAgent:
         # get future states from minibatch, then query NN model for Q values
         # when using target networdk, query it, otherwise main network should be queried
         current_state = np.array([transition[0] for transition in minibatch])/255
-        current_q_list = self.model.predict(current_state)
+        current_qs_list = self.model.predict(current_state)
+
+        new_current_state = np.array([transition[0] for transition in minibatch])/255
+        future_qs_list = self.model.predict(new_current_state)
+
 
         X, y = [], []
 
         # enumerating batches
         for index, (current_state, action, reward, new_current_state, done) in enumerate(minibatch):
+            if not done:
+                max_future_q = np.max(future_qs_list[index])
+                new_q = reward + DISCOUNT * max_future_q
+            else:
+                new_q = reward
 
+            # update q value for given state
+            current_qs = current_qs_list[index]
+            current_qs[action] = new_q
 
+            # appending to trainnig data
+            X.append(current_state)
+            y.append(current_qs)
 
+        self.model.fit(np.array(X)/255, np.array(y), batch_size=MINIBATCH_SIZE,
+                        verbose=0, shuffle=False, callbacks=[self.tensorboard] if terminal_state else None)
 
+        # update target network counter every episode
+        if terminal_state:
+            self.target_update_counter += 1
 
+        if self.target_update_counter > UPDATE_TARGET_EVERY:
+            self.target_model.set_weights(self.model.get_weights())
+            self.target_update_counter = 0
 
-
+    def get_qs(self, state):
+        return self.model.predict(np.array(state).reshape(-1, *state.shape)/255)[0]
 
 
 
@@ -305,98 +383,66 @@ class DQNAgent:
 
 
 
-episode_rewards = []
-for episode in range(EPISODES):
-    player = Squares()
-    food = Squares()
-    enemy = Squares()
 
-    if episode % SHOW_EVERY == 0:
-        print(f'on episode {episode}, epsilon is {epsilon}')
-        print(f'{SHOW_EVERY} ep. mean: {np.mean(episode_rewards[-SHOW_EVERY:])}')
-        show = True
-    else:
-        show = False
 
+
+env = SquaresEnv()
+
+ep_rewards = [-200]
+
+random.seed(1)
+np.random.seed(1)
+tf.set_random_seed(1)
+
+if not os.path.isdir('models'):
+    os.makedirs('models')
+
+
+agent = DQNAgent()
+
+for episode in tqdm(range(1, EPISODES + 1), ascii=True, unit='episodes'):
+
+    # update tensorboard step every episode
+    agent.tensorboard.step = episode
+
+    # restarting episode
     episode_reward = 0
+    step = 1
 
-    for i in range(200):
-        obs = (player-food, player-enemy)
+    # reset environment and get initial state
+    current_state = env.reset()
 
+    done = False
+
+    while not done:
         if np.random.random() > epsilon:
-            action = np.argmax(q_table[obs])
+            action = np.argmax(agent.get_qs(current_state))
         else:
-            action = np.random.randint(0, 4)
+            action = np.random.randint(0, env.ACTION_SPACE_SIZE)
+
+    new_state, reward, done = env.step(action)
+    episode_reward += reward
+
+    if SHOW_PREVIEW and not episode % AGGREGATE_STATS_EVERY:
+        env.render()
+
+    agent.update_replay_memory((current_state, action, reward, new_state, done))
+    agent.train(done, step)
+
+    current_state = new_state
+    step += 1
+
+    ep_rewards.append(episode_reward)
+    if not episode % AGGREGATE_STATS_EVERY or episode == 1:
+        average_reward = sum(ep_rewards[-AGGREGATE_STATS_EVERY:])/len(ep_rewards[-AGGREGATE_STATS_EVERY:])
+        min_reward = min(ep_rewards[-AGGREGATE_STATS_EVERY:])
+        max_reward = max(ep_rewards[-AGGREGATE_STATS_EVERY:])
+        agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward, epsilon=epsilon)
+
+        # save model, but oonly when reward is greater or equal a set value
+        if min_reward >= MIN_REWARD:
+            agent.model.save(f'models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}.model')
         
-        player.action(action)
-
-        enemy.move()
-        food.move()
-
-
-        # --------------
-        # REWARDS
-        # --------------
-
-
-        if player.x == enemy.x and player.y == enemy.y:
-            reward = (-ENEMY_PENALTY)
-        elif player.x == food.x and player.y == food.y:
-            reward = FOOD_REWARD
-        else:
-            reward = -MOVE_PENALTY
-
-        new_obc = (player-food, player-enemy)
-        max_futuer_q = np.max(q_table[new_obc])
-        current_q = q_table[obs][action]
-
-        if reward == FOOD_REWARD:
-            new_q = FOOD_REWARD
-        else:
-            new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * \
-                (reward + DISCOUNT * max_futuer_q)
-
-        q_table[obs][action] = new_q
-
-        if show:
-            time.sleep(0.01)
-            # black background
-            env = np.zeros((SIZE, SIZE, 3), dtype=np.uint8) 
-
-            # green food
-            env[food.x][food.y] = d[FOOD_N]
-
-            # blue player
-            env[player.x][player.y] = d[PLAYER_N]
-
-            # red enemy
-            env[enemy.x][enemy.y] = d[ENEMY_N]
-
-            img = Image.fromarray(env, 'RGB')
-            img = img.resize((400, 400))
-            cv2.imshow('game', np.array(img))
-
-            if reward == FOOD_REWARD or reward == (-ENEMY_PENALTY):
-                if cv2.waitKey(200) & 0xFF == ord('q'):
-                    break
-            else:
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-
-        episode_reward += reward
-        if reward == FOOD_REWARD or reward == (-ENEMY_PENALTY):
-            break
-        
-    # print(episode_reward)
-    episode_rewards.append(episode_reward)
-    epsilon *= EPS_DECAY
-    
-moving_avg = np.convolve(episode_rewards, np.ones((SHOW_EVERY,))/SHOW_EVERY, mode='valid')
-
-plt.plot([i for i in range(len(moving_avg))], moving_avg)
-plt.ylabel(f'Reward {SHOW_EVERY}ma')
-plt.xlabel('episode #')
-plt.show()
-
-with open(f'q_table-{int(time.time())}.pickle', 'wb') as f:
-    pickle.dump(q_table, f)
+    if epsilon > MIN_EPSILON:
+        epsilon *= EPS_DECAY
+        epsilon = max(MIN_EPSILON, epsilon)
