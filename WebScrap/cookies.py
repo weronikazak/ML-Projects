@@ -13,6 +13,8 @@ driver = webdriver.Chrome(PATH)
 
 driver.get("https://orteil.dashnet.org/cookieclicker/")
 
+driver.implicitLy_wait(5)
+
 cookie = driver.find_element_by_id('bigCookie')
 cookier_count = driver.find_element_by_id('cookies')
 time.sleep(3)
