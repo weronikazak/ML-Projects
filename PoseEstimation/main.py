@@ -1,3 +1,13 @@
+COCO_PAIRS = [
+	[0, 1], [1, 2], [2, 3], [3, 4], [1 ,5],
+	[5, 6], [6, 7], [8, 9], [9, 10],
+	[11, 12], [12, 13],
+	[15, 11], [15, 8], [2, 14], [5, 14],
+	[14, 15], [11, 14]
+	# i got lost
+]
+
+"""
 COCO = {
 	0:  "nose",
 	1:  "neck",
@@ -19,7 +29,11 @@ COCO = {
 	17: "l_ear",
 	18: "background"
 }
+"""
 
+MPII_PAIRS = [[0,1], [1,2], [2,3], [3,4], [1,5], [5,6], [6,7], [1,14], [14,8], [8,9], [9,10], [14,11], [11,12], [12,13] ]
+
+"""
 MPII = {
 	0:  "head",
 	1:  "neck",
@@ -38,6 +52,7 @@ MPII = {
 	14: "chest",
 	15: "background"
 }
+"""
 
 
 import cv2
@@ -59,7 +74,7 @@ innBlob = cv2.dnn.blobFromImage(frame, 1.0 / 255, (input_w, input_h),
 net.setInput(innBlob)
 
 output = net.forward()
-nPoints = 18
+nPoints = 16
 
 
 H, W = output.shape[2], output.shape[3]
@@ -75,14 +90,21 @@ for i in range(nPoints):
 	y = (frame_h * point[1]) / H
 
 	if prob > 0.1:
-		cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 255), thickness=-1,
+		cv2.circle(frame, (int(x), int(y)), 2, (0, 255, 255), thickness=-1,
 				lineType=cv2.FILLED)
-		cv2.putText(frame, f"{i}", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX,
-			1, (0, 0, 255), 3, lineType=cv2.LINE_AA)
+		# cv2.putText(frame, f"{i}", (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX,
+			# 0.5, (0, 0, 255), 3, lineType=cv2.LINE_AA)
 
 		points.append((int(x), int(y)))
 	else:
 		points.append(None)
+
+for pair in MPII_PAIRS:
+	a, b = pair[0], pair[1]
+
+	if points[a] and points[b]:
+		cv2.line(frame, points[a], points[b], (0, 255, 255), 2)
+		cv2.circle(frame, points[a], 8, (0, 0, 255), thickness=-1, lineType=cv2.FILLED)
 
 cv2.imshow("keypoints", frame)
 cv2.waitKey(0)
