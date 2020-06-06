@@ -5,30 +5,37 @@ from imutils.perspective import four_point_transform
 import imutils
 import time
 
-def nothing(x):
-	pass
-
 camera = cv2.VideoCapture(0)
 camera.set(3, 1280)
 camera.set(3, 720)
 
-cv2.namedWindow("trackbars")
+cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
 
-# HSV channels
-# cv2.createTrackbar("L - H", "trackbars", 0, 179, nothing)
-# cv2.createTrackbar("L - S", "trackbars", 0, 255, nothing)
-# cv2.createTrackbar("L - V", "trackbars", 0, 255, nothing)
-# cv2.createTrackbar("U - H", "trackbars", 179, 179, nothing)
-# cv2.createTrackbar("U - S", "trackbars", 255, 255, nothing)
-# cv2.createTrackbar("U - V", "trackbars", 255, 255, nothing)
+pen_img = cv2.resize(cv2.imread('images/pen.jpg', 1), (100, 100))
+eraser_img = cv2.resize(cv2.imread('images/eraser.jpg', 1), (100, 100))
+
+background_threshold = 200
+background_object = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
+
+switch = "Pen"
+
+last_switch = time.time()
+
+kernel = np.ones((5, 5), np.uint8)
 
 load_from_disk = True
 
 if load_from_disk:
 	penval = np.load('penval.npy')
 
-kernel = np.ones((5, 5), np.uint8)
+noiseth = 800
 
+canvas = None
+x1, y1 = 0, 0
+
+# threshold for wiper, the size of the contour must be bigger
+wiperth = 40000
+clear = False
 
 while True:
 	ret, frame = camera.read()
@@ -37,21 +44,32 @@ while True:
 	frame = cv2.flip(frame, 1)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
+	if canvas is None:
+		canvas = np.zeros_like(frame)
+
+	# apply the bcgrd substractor to top left of the frame
+	top_left = frame[0:100, 0:100]
+	fgmask = background_object.apply(top_left)
+
+	# note the number of pixels that are white as lvl of discruption
+	switch_thresh = np.sum(fgmask==255)
+
+	# if th discruption is greater than background thresh and tere has been
+	# some time after the previous switch, then can change the obj type
+	if switch_thresh > background_threshold and (time.time()-last_switch) > 1:
+		last_switch = time.time()
+
+		if switch == "Pen":
+			switch = "Eraser"
+		else:
+			switch = "Pen"
+
 	if load_from_disk:
 		lower_range = penval[0]
 		upper_range = penval[1]
 	else:
 		lower_range = np.array([143, 139, 0])
 		upper_range = np.array([179, 255, 255])
-
-	# l_h = cv2.getTrackbarPos("L - H", "trackbars")
-	# l_s = cv2.getTrackbarPos("L - S", "trackbars")
-	# l_v = cv2.getTrackbarPos("L - V", "trackbars")
-	# u_h = cv2.getTrackbarPos("U - H", "trackbars")
-	# u_s = cv2.getTrackbarPos("U - S", "trackbars")
-	# u_v = cv2.getTrackbarPos("U - V", "trackbars")
-
-
 
 	# filter the image and get the binary mask, where white
 	# represents target colour
@@ -60,24 +78,63 @@ while True:
 	mask = cv2.erode(mask, kernel, iterations=1)
 	mask = cv2.dilate(mask, kernel, iterations=2)
 
-	res = cv2.bitwise_and(frame, frame, mask=mask)
+	contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL,
+											cv2.CHAIN_APPROX_SIMPLE)
 
-	mask_3 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+	# make sure there is contour present and also make sure
+	# its size is bigger than noise threshold
+	if contours and cv2.contourArea(max(contours, key=cv2.contourArea)) > noiseth:
+		c = max(contours, key=cv2.contourArea)
+		area = cv2.contourArea(c)
 
-	# stack the mask, original frame and filteres result
-	stacked = np.hstack((mask_3, frame, res))
+		x2, y2, w, h = cv2.boundingRect(c)
 
-	# show stacked frame at 0.4 0f the size
-	cv2.imshow('trackbars', cv2.resize(stacked, None, fx=0.4, fy=0.4))
+		if x1 == 0 and y1 == 0:
+			x1, y1 = x2, y2
+		else:
+			if switch == "Pen":
+				canvas = cv2.line(canvas, (x1, y2), (x1, y2), [255, 0, 0], 5)
+			else:
+				cv2.circle(canvas, (x2, y2), 20, (0, 0, 0), -1)
+		x1, y1 = x2, y2
+
+	# if area is greater than the wiper threshold, then set the var
+	# clear and warn user
+		if area > wiperth:
+			cv2.putText(canvas, "Clearing canvas", (100, 200), cv2.FONT_HERSHEY_SIMPLEX,
+							2, (0, 0, 255), 5, cv2.LINE_AA)
+			clear = True
+
+	else:
+		# if no contour detected
+		x1, y1 = 0, 0
+
+	_, mask = cv2.threshold(cv2.cvtColor(canvas, cv2.COLOR_BGR2GRAY), 20, 255,
+				cv2.THRESH_BINARY)
+	foreground = cv2.bitwise_and(canvas, canvas, mask=mask)
+	background = cv2.bitwise_and(frame, frame, mask=cv2.bitwise_not(mask))
+	frame = cv2.add(foreground, background)
+
+	if switch != "Pen":
+		cv2.circle(frame, (x1, y1), 20, (255, 255, 255), -1)
+		frame[0:100, 0:100] = eraser_img
+	else:
+		frame[0:100, 0:100] = pen_img
+
+
+	cv2.imshow('frame', frame)
 
 	if cv2.waitKey(20) & 0xFF == ord('q'):
 		break
 
-	if cv2.waitKey(20) & 0xFF == ord('s'):
-		arr = [[l_h, l_s, l_v], [u_h, u_s, u_v]]
-		print(arr)
+	if clear:
+		time.sleep(1)
+		canvas = None
 
-		np.save('penval', arr)
-		break
+		clear = False
+
+
 camera.release()
 cv2.destroyAllWindows()
+
+# src https://www.learnopencv.com/creating-a-virtual-pen-and-eraser-with-opencv/?ck_subscriber_id=760660522
