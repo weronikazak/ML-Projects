@@ -1,5 +1,3 @@
-import numpy as np
-
 TABLICA = [ [0, 8, 4, 3, 0, 0, 1, 0, 0],
 			[9, 0, 0, 0, 0, 2, 0, 0, 4],
 			[0, 0, 0, 0, 1, 0, 0, 0, 7],
@@ -10,9 +8,7 @@ TABLICA = [ [0, 8, 4, 3, 0, 0, 1, 0, 0],
 			[0, 0, 1, 0, 0, 0, 0, 5, 0],
 			[0, 0, 0, 0, 0, 6, 0, 0, 0]
 		]
-
 size = len(TABLICA)
-
 
 def print_tab(tab):
 	for i1, row in enumerate(tab):
@@ -75,12 +71,3 @@ def iterating(num, row, col, tab):
 			if tab[i][j] is num and (j, i) is not (row, col):
 				return False
 	return True
-			
-
-
-print_tab(TABLICA)
-guess(TABLICA)
-print("                        ")
-print("                        ")
-print("                        ")
-print_tab(TABLICA)
