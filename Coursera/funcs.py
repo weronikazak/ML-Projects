@@ -61,18 +61,8 @@ def df_to_oneshot(df_data_venues):
 
 
 
-def places_by_frequency(df_oneshot, num_top_venues = 5):
+def places_by_frequency(df_oneshot):
     df_grouped = df_oneshot.groupby('Neighborhood').mean().reset_index()
-    
-    for hood in df_grouped['Neighborhood']:
-        print("----"+hood+"----")
-        temp = df_grouped[df_grouped['Neighborhood'] == hood].T.reset_index()
-        temp.columns = ['venue','freq']
-        temp = temp.iloc[1:]
-        temp['freq'] = temp['freq'].astype(float)
-        temp = temp.round({'freq': 2})
-        print(temp.sort_values('freq', ascending=False).reset_index(drop=True).head(num_top_venues))
-        print('\n')
     return df_grouped
 
 
@@ -166,3 +156,79 @@ def show_map_clusters(kclusters, df_merged, df_coords):
 def show_cluster_number(df_merged, cluster_num):
   cluster = df_merged.loc[df_merged['Cluster Labels'] ==  cluster_num, df_merged.columns[[1] + list(range(5, df_merged.shape[1]))]]
   return cluster
+
+
+def classify_categories(df_onehot):
+	bussiness_categories = {
+	    "gastronomy": ["food", "restaurant", "breakfast", "bar", "pub", "café", "diner", "donut", "coffee",
+	                  "cupcake", "fried", "gastropub", "cream", "pastry", "pie", "pizza", "salad", "sandwich",
+	                  "snack", "steakhouse", "wine", "bagel", "bakery", "bistro", "beer","butcher", "bodega",
+	                  "noodle", "burger", "brewery", "trattoria", "speakeasy", "burrito", "cafeteria",
+	                  "creperie"],
+	    "entertainment": ["zoo", "auditorium", "bowling", "casino", "club", "massage", "theater", "music",
+	                     "spa", "entertainment"],
+	    "culture": ["art", "library", "church", "castle", "bridge", "courthouse", "opera", "sculpture",
+	               "histor", "spirit", "university", "school", "museum", "boarding", "hall", "monument",
+	               "fountain", "lounge", "nature", "river"],
+	    "tourists":["hostel", "hotel", "airport", "bed", "metro", "station", "bus", "boat", "lookout", "beach",
+	               "campground", "port"],
+	    "sport":["sport", "park", "yoga",  "garden", "run", "golf", "gym", "lake", "plaza", "pool", "race",
+	            "road", "mall", "soccer", "tennis", "stadium", "playground", "ski", "skating", "trail"],
+	    "shops": ["store", "boutique", "shop", "market", "pharmacy", "service", "hockey", "rent", "agency"]
+	}
+	categories = list(df_onehot.columns)[1:]
+	categories = [c.lower() for c in categories]
+
+	classifiy_categories = {
+	    "gastronomy": [],
+	    "entertainment": [],
+	    "culture": [],
+	    "tourists":[],
+	    "sport":[],
+	    "shops": [],
+	    "other":[]
+	}
+
+	for category in categories:
+	    isinarray = False
+	    for bcat in bussiness_categories:
+	        tags = bussiness_categories[bcat]
+	        for tag in tags:
+	            if tag in category:
+	                classifiy_categories[bcat].append(category)
+	                isinarray = True
+	                break
+	    if not isinarray:
+	        classifiy_categories["other"].append(category)
+	num_of_facilities = [len(classifiy_categories[c]) for c in classifiy_categories]
+	facilities = list(classifiy_categories.keys())
+	df_facilities = pd.DataFrame({"Facility": facilities, "Amount":num_of_facilities})
+	return classifiy_categories, df_facilities
+
+
+def visualize_categories(COORDS, data_venues, classifiy_categories):
+	rainbow = ["red", "blue", "green", "yellow", "violet", "limegreen", "skyblue"]
+	facilities = ["gastronomy", "entertainment", "culture", "tourists", "sport", "shops", "other"]
+	
+	df_map = folium.Map(location=COORDS, zoom_start=10)
+
+	for i, row in data_venues.iterrows():
+	    lat = row["Venue Latitude"]
+	    ven = row["Venue Category"]
+	    lon = row["Venue Longitude"]
+	    for c in classifiy_categories:
+	        vals = classifiy_categories[c]
+	        for v in vals:
+	            if v == ven.lower():
+	                index = facilities.index(c)
+	                break
+	    label = folium.Popup(facilities[index], parse_html=True)
+	    folium.CircleMarker(
+	      [lat, lon],
+	      radius=5,
+	      popup=label,
+	      color=rainbow[index],
+	      fill=True,
+	      fill_color=rainbow[index],
+	      fill_opacity=0.7).add_to(df_map)
+	return df_map
