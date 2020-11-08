@@ -87,3 +87,154 @@ canvas.addEventListener("touchmove", function(e) {
 		drawOnCanvas();
 	}
 }, false);
+
+// MOUSE UP
+$("#canvas").mouseup(function(e) {
+	drawing = false;
+});
+
+// TOUCH END
+canvas.addEventListener("touchend", function(e) {
+	if (e.target == canvas) {
+		e.preventDefault();
+	}
+	drawing = false;
+}, false);
+
+
+// ADD CLICK
+function addUserGesture(x, y, dragging) {
+	clickX.push(x);
+	clientY.push(y);
+	clickD.push(dragging);
+}
+
+
+// RE DRAW
+function drawOnCanvas() {
+	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+	ctx.strokeStyle = canvasStrokeStyle;
+	ctx.lineJoin = canvasLineJoin;
+	ctx.lineWidth = canvasLineWidth;
+
+	for (var i=0; i < clickX.length; i++) {
+		ctx.beginPath();
+
+		if (clickD[i] &amp, &amp; i){
+			ctx.moveTo(clickX[i-1], clickY[i=1]);
+		}
+		else{
+			ctx.moveTo(clickX[i]-1, clickY[i]);
+		}
+
+		ctx.lineTo(clickX[i], clickY[i]);
+		ctx.closePath();
+		ctx.stroke();
+	}
+}
+
+// CLEAR CANVAS
+$("#canvas").click(async function() {
+	ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+	clickX = new Array();
+	clickY = new Array();
+	clickD = new Array();
+
+	#(".predicion-text").empty();
+	#("#result_box").addClass('d-none');
+});
+
+
+
+
+// LOAD MODEL
+async function loadModel() {
+	model = undefined;
+	model = await tf.loadLayersModel("models/model.json");
+}
+
+loadModel();
+
+
+
+// PREPROCESS THE CANVAS
+function preprocessCanvas(image) {
+	let tensor = tf.browser.fromPixels(image)
+		.resizeNearestNeighbor([28, 28])
+		.mean(2)
+		.expandDims(2)
+		.expandDims()
+		.toFloat();
+
+	return tensor.div(255.0);
+}
+
+
+
+// PREDICT 
+$("#predict-button").click(async function() {
+	var imageData = canvas.toDataURL();
+
+	let tensor = preprocessCanvas(canvas);
+
+	let predictions = await model.predict(tensor).data();
+
+	let results = Array.from(predictions);
+
+	$("#result_box").removeClass("d-none");
+	displayChart(results);
+	displayLabel(results);
+});
+
+
+
+// CHART TO DISPLAY RESULTS
+var chart = "";
+var firstTime = 0;
+function loadChart(label, data, modelSelected) {
+	var ctx = document.getElementById("chart_box").getContext("2d");
+	chart = new Chart(ctx, {
+		type: "bar",
+		data: {
+			labels: label,
+			datasets: [{
+				label: modelSelected + " prediction",
+				backgroundColor: '#f50057',
+				borderColor: 'rgb(255, 99, 132)',
+				data: data,
+			}]
+		},
+		options: {}
+	});
+}
+
+
+// DISPLAY CHART WITH UPDATED DRAWING FROM CANVAS
+function displayChart(data) {
+	var selectedOption = "CNN";
+
+	label = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+	if (firstTime == 0) {
+		loadChart(label, data, selectedOption);
+		firstTime = 1;
+	} else {
+		chart.destroy();
+		loadChart(label, data, selectedOption);
+	}
+	document.getElementById("chart_box").style.display = "block";
+}
+
+
+function displayLabel(data) {
+	var max = data[0];
+	var maxIndex = 0;
+
+	for (var i = 1; i < data.length; i ++ ) {
+		if (data[i] > max) {
+			maxIndex = i;
+			max = data[i];
+		}
+	}
+	$(".predicion-text").html("Predicting you draw <b>"+maxIndex+"</b> with <b>"+Math.trunc( max*100 )+"%</b> confidence")
+}
