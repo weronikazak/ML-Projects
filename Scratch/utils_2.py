@@ -131,12 +131,14 @@ def linear_activation_backward(dA, cache, activation):
 # ---------------   PREDICTIONS   ---------------
 # -----------------------------------------------
 
+from utils_Lmodel import L_model_forward
+
 def predict(X, Y, params):
     m = X.shape[1]
     n = len(params)//2 #num of layers in neural network
     p = np.zeros((1, m))
 
-    probs, caches = L_model_formad(X, params)
+    probs, caches = L_model_forward(X, params)
 
     for i in range(probs.shape[1]):
         if probs[0, i] > 0.5:
@@ -144,6 +146,6 @@ def predict(X, Y, params):
         else:
             p[0, i] = 0
 
-    print("Accuracy: {}".format(np.sum((p==y)/m)))
+    print("Accuracy: {}".format(np.sum((p==Y)/m)))
 
     return p
