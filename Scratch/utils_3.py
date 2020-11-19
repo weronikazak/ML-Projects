@@ -21,7 +21,7 @@ def init_params(layers_dims):
     params = {}
     L = len(layers_dims)
     for l in range(1, L):
-        params["W"+str(l)] = np.zeros((layers_dims[l], layers_dims[l-1]))
+        params["W"+str(l)] = np.random.randn(layers_dims[l], layers_dims[l-1])/ np.sqrt(layers_dims[l-1])
         params["b"+str(l)] = np.zeros((layers_dims[l], 1))
     return params
 
@@ -40,12 +40,13 @@ def update_params(params, grads, learning_rate):
 # -------------   COST FUNCTION   -------------
 # ---------------------------------------------
 
-def compute_cost(AL, Y):
+def compute_cost(A3, Y):
     m = Y.shape[1]
-    logprobs = np.multiply(-np.log(A3), Y) + np.multiply(-np.log(1 - A3), 1 - Y)
-    loss = (1./m) * np.nansum(logprobs)
     
-    return loss
+    logprobs = np.multiply(-np.log(A3),Y) + np.multiply(-np.log(1 - A3), 1 - Y)
+    cost = 1./m * np.nansum(logprobs)
+    
+    return cost
 
 
 # -----------------------------------------------
@@ -97,26 +98,27 @@ def backprop(X, Y, cache):
     
     return grads
 
+# ----------------------------------------------
+# ---------------   PREDICTIONS  ---------------
+# ----------------------------------------------
 
-# -----------------------------------------------
-# ---------------   PREDICTIONS   ---------------
-# -----------------------------------------------
+def predict(X, Y, params):
+    m = X.shape[1]
+    p = np.zeros((1,m), dtype = np.int)
+    
+    A3, caches = forward_propagation(X, params)
+    
+    for i in range(0, A3.shape[1]):
+        if A3[0,i] > 0.5:
+            p[0,i] = 1
+        else:
+            p[0,i] = 0
 
-# from utils_Lmodel import L_model_forward
+    print("Accuracy: "  + str(np.mean((p[0,:] == Y[0,:]))))
+    
+    return p
 
-# def predict(X, Y, params):
-#     m = X.shape[1]
-#     n = len(params)//2 #num of layers in neural network
-#     p = np.zeros((1, m))
-
-#     probs, caches = L_model_forward(X, params)
-
-#     for i in range(probs.shape[1]):
-#         if probs[0, i] > 0.5:
-#             p[0, 1] = 1
-#         else:
-#             p[0, i] = 0
-
-#     print("Accuracy: {}".format(np.sum((p==Y)/m)))
-
-#     return p
+def predict_dec(params, X):
+    A3, cache = forward_propagation(X, params)
+    preds = (A3 > 0.5)
+    return preds
