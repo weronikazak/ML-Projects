@@ -5,6 +5,9 @@ def load_data(data_name):
 	if data_name == "signs":
 		train_file = "data/train_signs.h5"
 		test_file = "data/test_signs.h5"
+	elif data_name == "happy":
+		train_file = "data/train_happy.h5"
+		test_file = "data/test_happy.h5"
 
 	train_dataset = h5py.File(train_file, "r")
 	X_train = np.array(train_dataset["train_set_x"][:])
