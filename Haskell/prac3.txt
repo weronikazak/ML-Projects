@@ -1,0 +1,65 @@
+# [String]
+# (String, String, String)
+# [(Bool, String)]
+# ([Bool], [String])
+# (Bool, [String])
+# (String, (Bool, String))
+
+
+# [Char]
+# (Char, Char, Char)
+# [(Bool, Char)]
+# ([Bool], [Char])
+# (Bool, [Char])
+# (Char, (Bool, Char))
+
+
+dayhoursmins::Int->(Int, Int, Int)
+dayhoursmins x = (x `div` 1440, x `mod` 1440 `div` 60, x `mod` 1440 `mod` 60)
+
+
+
+
+suma::[Int]->Int
+suma[] = 0
+suma(x:xs) = x + suma xs
+
+sumnegpos::[Int]->(Int, Int)
+sumnegpos arr = (suma [n | n<-arr, n < 0], suma [n | n<-arr, n > 0])
+
+
+sumneg::[Int]->Int
+sumneg xs
+ | xs == [] = 0
+ | head xs > 0 = sumneg (tail xs)
+ | head xs <= 0 = head xs + sumneg (tail xs)
+
+
+sumpos::[Int]->Int
+sumpos xs
+ | xs == [] = 0
+ | head xs < 0 = sumpos (tail xs)
+ | head xs >= 0 = head xs + sumpos (tail xs)
+
+sumnegpos::[Int]->(Int, Int)
+sumnegpos xs = (sumneg xs, sumpos xs)
+
+
+
+
+
+removing::[Int]->[Int]
+removing x = drop 2 (init (init x))
+
+
+
+
+shuffle::[Int]->[Int]
+shuffle x = tail(x++ [head x])
+
+
+
+safetail::[Int]->[Int]
+safetail xs
+ | xs == [] = []
+ | otherwise = tail xs

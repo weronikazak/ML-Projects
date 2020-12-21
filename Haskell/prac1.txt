@@ -1,0 +1,75 @@
+next::Int->Int
+next x
+ |x 'mod' 2 == 0 = x/2
+ |otherwise = (x*2) + 1
+
+# PRAWIDLOWE
+next::Int->Int
+next x
+ |x `mod` 2 == 0 = n `div` 2
+ |otherwise      = 2*n+1
+
+
+
+
+k::Int->Int->Boolean
+k x y
+|x < 0 || y < 0 = True
+|otherwise = False
+
+# PRAWIDLOWE
+k::Int -> Int-> Bool
+k x y
+ |x<0 || y<0 = True
+ |otherwise  = False
+
+
+
+
+
+absolute::Int->Int
+absolute x
+|x < 0 = x * (-1)
+|otherwise = x
+
+
+# PRAWDILOWE
+absolute::Int->Int
+absolute n
+ |n>=0 = n
+ |otherwise = -n
+
+
+
+
+
+
+trafficlights::String->String
+trafficlights light
+|if light == "red" || light == "green" = "orange"
+|otherwise = "red or green"
+
+# PRAWDILOWE
+trafficlights::String->String
+trafficlights x
+  | x == "red" = "red amber"
+  | x == "red amber" = "green"
+  | x == "green" = "amber"
+  | x == "amber" = "red"
+  | otherwise = "traffic lights not working"
+
+
+
+
+summinmax3::Int->Int->Int->Int
+summinmax3 x y z = sum( min(x y z) max(x y z) )
+
+# PRAWIDLOWE
+summinmax3 ::Int -> Int -> Int -> Int
+summinmax3 x y z  
+  | x<=y && y<=z = x+z
+  | z<=y && y<=x = x+z
+  | y<=x && x<=z = y+z
+  | z<=x && x<=y = y+z
+  | x<=z && z<=y = x+y
+  | y<=z && z<=x = x+y

@@ -1,0 +1,86 @@
+sumsq::Int->Int
+sumsq 0=0
+sumsq n = n*n + sumsq (n - 1)
+
+
+
+evenf::Int->Int
+evenf 0=0
+evenf n = n + evenf( n - 2 )
+
+oddf::Int->Int
+oddf 1=1
+oddf n = n * oddf(n - 2)
+
+prodsum::Int->Int
+prodsum n 
+ | div n 2 == 0 = evenf(n) * oddf(n - 1)
+ | otherwise = evenf(n-1) * oddf(n)
+
+
+# PRAWIDLOWE
+prododd::Int->Int
+prododd n
+ | n == 1 = 1
+ | n `mod` 2 == 0 = prododd(n-1)
+ | otherwise = n*prododd
+
+sumeven::Int->Int
+sumeven n
+ |n == 0 = 0
+ |n `mod` 1 /= 0 = sumeven(n-1)
+ |otherwise = n + sumeven(n-1)
+
+prodsum::Int->Int
+prodsum n = prododd n * sumeven n
+
+
+
+
+
+
+divideCheck::Int->Int->Bool
+divideCheck n x
+ | n = 1 = True
+ | x `div` n == 0 = False 
+
+
+isitprime::Int->Bool
+isitprime n = divideCheck(n-1, n)
+
+
+# PRAWIDLOWE
+factorsupto::Int->Int->Bool
+factorsupto m n
+ |m == 1 = False
+ |n `mod` m == 0 = True
+ |n `mod` m /= 0 = fatorsupto (m-1) n
+
+isitprime::Int->Bool
+isitprime n
+ |n==0 = False
+ |n==1 = False
+ |n<=3 = True
+ |otherwise = not (factorsupto (n-1) n)
+
+
+
+
+
+
+
+factorial::Int->Int
+factorial 0=1
+factorial n = n * factorial(n-1)
+
+
+comb::Int->Int->Int
+comb n m = factorial(n) `div` (factorial(m) * factorial(n - m))
+
+
+# PRAWDILOWY FACTORIAL
+factorial::Int->Int
+fac n
+ |n==0 = 1
+ |n>0  = fac (n-1) * n
+ |otherwise = 0
