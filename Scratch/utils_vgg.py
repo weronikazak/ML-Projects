@@ -5,6 +5,7 @@ import tensorflow.compat.v1 as tf
 import scipy
 import scipy.io
 import scipy.misc
+import imageio
 import PIL
 from PIL import Image
 import os
@@ -79,10 +80,9 @@ def load_vgg_model(path):
 
 
 def generate_noise_img(content_img, noise_ratio=0.6):
-	noise_img = np.random.uniform(-20, 20, (1, 450, 600, 3)).astype("float32") 
-
+	noise_img = np.random.uniform(-11, 11, (1, 450, 600, 3)).astype('float32')
 	input_img = noise_img * noise_ratio + content_img * (1 - noise_ratio)
-
+	
 	return input_img
 
 
@@ -125,4 +125,4 @@ def save_img(path, img):
 	img = img + means
 
 	img = np.clip(img[0], 0, 255).astype("uint8")
-	scipy.misc.imsave(path, img)
+	imageio.imwrite(path, img)
