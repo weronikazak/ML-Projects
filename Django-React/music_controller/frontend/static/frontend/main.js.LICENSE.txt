@@ -1,7 +1,0 @@
-/*! runtime requirements:  */
-
-/*! unknown exports (runtime-defined) */
-
-/*!**********************!*\
-  !*** ./src/index.js ***!
-  \**********************/
