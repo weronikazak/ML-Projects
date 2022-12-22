@@ -8,6 +8,7 @@ import {
   AdjustmentsIcon,
   ChevronDownIconS
 } from "react-native-heroicons/outline";
+import FeaturedRow from "../components";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -56,10 +57,23 @@ const HomeScreen = () => {
         paddingBottom: 100,
       }}>
           <Categories />
+          
           <FeaturedRow 
+            id="123"
             title="Featured"
             description="Paid placements from our partners"
-            featuredCategory="featured"
+          />
+
+          <FeaturedRow 
+            id="1234"
+            title="Tasty Discounts"
+            description="Paid placements from our partners"
+          />
+
+          <FeaturedRow 
+            id="12345"
+            title="Offers Near You"
+            description="Paid placements from our partners"
           />
       </ScrollView>
 
