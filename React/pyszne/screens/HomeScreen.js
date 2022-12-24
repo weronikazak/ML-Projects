@@ -9,13 +9,31 @@ import {
   ChevronDownIconS
 } from "react-native-heroicons/outline";
 import FeaturedRow from "../components";
+import { sanityClient } from '..sanity';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const [featuredCategories, setFeaturedCategories] = useState();
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false
+    });
+  }, []);
+
+  useEffect(() => {
+    sanityClient.fetch(
+      `
+      *l_type == "featured" | {
+        ...,
+        restaurants[]->{
+          ...,
+          dishes[]->
+        }
+      }
+      `
+    ).then((data) => {
+      setFeaturedCategories(data)
     });
   }, []);
 
@@ -57,6 +75,16 @@ const HomeScreen = () => {
         paddingBottom: 100,
       }}>
           <Categories />
+
+          {featuredCategories?.map((category) => {
+            <FeaturedRow 
+              key={category._id}
+              id={category._id}
+              title={category.name}
+              description={category.short_description}
+            />
+          })
+          }
           
           <FeaturedRow 
             id="123"

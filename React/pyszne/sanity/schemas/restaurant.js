@@ -13,7 +13,7 @@ export default defineType({
     },
     {
       name: "short_description",
-      type: "strinf",
+      type: "string",
       title: "Short description"
     },
     {
