@@ -69,9 +69,6 @@ Quantitative programming using IBM Python supporting library.
 ## R
 Few projects just to get familiar with R language, syntax, possibilities and R Studio.
 
-## REACT
-TODO
-
 ## REINFORCEMENT
 Reinforcement Learning projects tested with gym library and its environments.
 
