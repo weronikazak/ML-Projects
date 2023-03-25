@@ -49,7 +49,7 @@ Mammography project. Detecting breast cancer with Neural Networks.
 Development and deployment of mobile applications coded in Python.
 
 ## NOTES
-TODO
+Notes to prepare for ML or AI interview (Andrew Ng).
 
 ## OPENCV(2)
 Experimenting with filters, haar cascades, timelapses. Video and photo features.
@@ -73,7 +73,7 @@ Few projects just to get familiar with R language, syntax, possibilities and R S
 Reinforcement Learning projects tested with gym library and its environments.
 
 ## SCRATCH
-TODO
+Based on the tutorial from Andrew NG about building neural networks from the scratch.
 
 ## SELF-DRIVING CARS
 Computer Vision and CARLA projects.
@@ -94,7 +94,7 @@ Sudoku game made with PyGame. Implemented self-solving recursive algorithm.
 Document summarization with Sklearn and Deep Learning.
 
 ## TENSORFLOW
-TODO
+Various resources - notes and exercises about Machine Learning, Neural Networks and AI.
 
 ## VIRUSES
 Exploring the way that viruses work and how they are programmed (white hat hacking).
