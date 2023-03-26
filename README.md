@@ -5,8 +5,6 @@ Few Machine Learning and AI themed projects  using Python 3.7 and its libraries,
 - Numpy
 - Tensorflow
 - OpenCV
-- BeautifulSoup
-- Selentium
 - Seaborn
 - Pyttsx
 - Gym
@@ -44,9 +42,6 @@ Trying out various Machine Learning libraries (Altair, Bokeh, Datapane, etc).
 
 ## MAMMO PROJECT
 Mammography project. Detecting breast cancer with Neural Networks.
-
-## MOBILEDEV
-Development and deployment of mobile applications coded in Python.
 
 ## NOTES
 Notes to prepare for ML or AI interview (Andrew Ng).
@@ -96,11 +91,5 @@ Document summarization with Sklearn and Deep Learning.
 ## TENSORFLOW
 Various resources - notes and exercises about Machine Learning, Neural Networks and AI.
 
-## VIRUSES
-Exploring the way that viruses work and how they are programmed (white hat hacking).
-
 ## VIZUALISATIONS
 Exploring Seaborn, Matplotlib's plots and Panda's plots. Lots of data vizualisations (who would have guessed).
-
-## WEB SCRAP
-Scraping websites with Selentium and Beautiful Soup.
